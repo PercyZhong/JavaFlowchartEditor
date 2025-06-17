@@ -30,4 +30,9 @@ public class RectangleShape extends FlowchartShape {
     public boolean contains(double px, double py) {
         return rect.contains(px, py); // 使用 JavaFX 自带的 contains 方法，准确可靠
     }
+
+    @Override
+    public RectangleShape clone() throws CloneNotSupportedException {
+        return (RectangleShape) super.clone();
+    }
 }

@@ -47,4 +47,9 @@ public class DiamondShape extends FlowchartShape {
         // 直接使用 Polygon 自带的 contains 方法
         return diamond.contains(px, py);
     }
+
+    @Override
+    public DiamondShape clone() throws CloneNotSupportedException {
+        return (DiamondShape) super.clone();
+    }
 }

@@ -6,7 +6,7 @@ public class MainWindow extends BorderPane {
     public MainWindow() {
         CanvasPane canvas = new CanvasPane();
         ToolbarPanel toolbar = new ToolbarPanel(canvas);
-        ShapeLibraryPanel shapeLibrary = new ShapeLibraryPanel();
+        ShapeLibraryPanel shapeLibrary = new ShapeLibraryPanel(canvas);
         PropertyPanel propertyPanel = new PropertyPanel();
 
         canvas.setPropertyPanel(propertyPanel);

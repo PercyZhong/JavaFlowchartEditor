@@ -3,7 +3,7 @@ package editor.model;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
 
-public abstract class FlowchartShape {
+public abstract class FlowchartShape implements Cloneable {
     protected double x, y, width, height;
     protected Color color = Color.LIGHTBLUE;
     protected String label = "";
@@ -32,4 +32,12 @@ public abstract class FlowchartShape {
     public void setColor(Color color) { this.color = color; }
     public void setLabel(String label) { this.label = label; }
     public void setSelected(boolean selected) { this.selected = selected; }
+
+    @Override
+    public FlowchartShape clone() throws CloneNotSupportedException {
+        FlowchartShape cloned = (FlowchartShape) super.clone();
+        // 对于基本类型，super.clone() 已经足够。
+        // 如果有复杂对象，需要在这里进行深拷贝。
+        return cloned;
+    }
 }

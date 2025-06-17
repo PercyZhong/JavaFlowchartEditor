@@ -30,4 +30,9 @@ public class EllipseShape extends FlowchartShape {
     public boolean contains(double px, double py) {
         return ellipse.contains(px, py); // 使用 JavaFX 的 contains 方法，位置会更精确
     }
+
+    @Override
+    public EllipseShape clone() throws CloneNotSupportedException {
+        return (EllipseShape) super.clone();
+    }
 }
