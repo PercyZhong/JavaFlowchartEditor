@@ -50,9 +50,13 @@ public class ConnectionLine {
         if (type == LineType.STRAIGHT) {
             this.line = new Line();
         } else if (type == LineType.POLYLINE) {
-            this.line = new Polyline();
+            Polyline poly = new Polyline();
+            poly.setFill(Color.TRANSPARENT);
+            this.line = poly;
         } else {
-            this.line = new QuadCurve();
+            QuadCurve curve = new QuadCurve();
+            curve.setFill(Color.TRANSPARENT);
+            this.line = curve;
         }
         // 继承样式
         this.line.setStroke(color);
