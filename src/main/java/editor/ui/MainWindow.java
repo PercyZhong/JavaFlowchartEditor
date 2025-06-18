@@ -7,6 +7,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.paint.Color;
 import org.json.JSONObject;
+import javafx.scene.control.Button;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -32,6 +33,19 @@ public class MainWindow extends BorderPane {
         setLeft(shapeLibrary);
         setCenter(canvas);
         setRight(propertyPanel);
+
+        // 添加导出图片按钮
+        Button exportBtn = new Button("导出图片");
+        exportBtn.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("导出为PNG图片");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG 图片", "*.png"));
+            File file = fileChooser.showSaveDialog(primaryStage);
+            if (file != null) {
+                canvas.exportAsPng(file);
+            }
+        });
+        if (toolbar != null) toolbar.getItems().add(exportBtn);
     }
 
     public void newFile() {

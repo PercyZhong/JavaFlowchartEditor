@@ -21,6 +21,12 @@ import org.json.JSONObject;
 import javafx.scene.shape.Polyline;
 import javafx.scene.shape.QuadCurve;
 import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.WritableImage;
+import javafx.scene.SnapshotParameters;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -857,5 +863,14 @@ public class CanvasPane extends Pane {
         t = Math.max(0, Math.min(1, t));
         double projX = x1 + t * dx, projY = y1 + t * dy;
         return Math.hypot(px - projX, py - projY);
+    }
+
+    public void exportAsPng(File file) {
+        WritableImage image = this.snapshot(new SnapshotParameters(), null);
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
