@@ -1,6 +1,7 @@
 package editor.ui;
 
 import editor.model.FlowchartShape;
+import editor.model.ConnectionLine;
 import javafx.geometry.Insets;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
@@ -8,27 +9,88 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import java.util.List;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 
 public class PropertyPanel extends VBox {
     private final TextField labelField = new TextField();
-    private final ColorPicker colorPicker = new ColorPicker();
+    private final ColorPicker shapeColorPicker = new ColorPicker();
+    private final ColorPicker lineColorPicker = new ColorPicker();
     private boolean isUpdatingFromShape = false; // 添加标志，用于防止循环更新
     private boolean isMultiSelect = false; // 添加多选标志
 
     private FlowchartShape currentShape;
     private List<FlowchartShape> selectedShapes; // 添加选中图形列表
 
+    private ConnectionLine currentLine;
+    private ComboBox<String> lineTypeBox = new ComboBox<>();
+    private Spinner<Double> strokeWidthSpinner = new Spinner<>();
+    private CheckBox arrowCheckBox = new CheckBox("显示箭头");
+
+    private VBox shapeSection = new VBox();
+    private VBox lineSection = new VBox();
+
     public PropertyPanel() {
         setPadding(new Insets(10));
         setSpacing(10);
-        getChildren().addAll(
-                new Label("文字标签："), labelField,
-                new Label("颜色："), colorPicker
+        shapeSection.setSpacing(10);
+        lineSection.setSpacing(10);
+        // 图形属性区控件
+        shapeSection.getChildren().addAll(
+            new Label("文字标签："), labelField,
+            new Label("颜色："), shapeColorPicker
         );
-
+        // 线条属性区控件
+        lineSection.getChildren().addAll(
+            new Label("线型："), lineTypeBox,
+            new Label("颜色："), lineColorPicker,
+            new Label("粗细："), strokeWidthSpinner,
+            arrowCheckBox
+        );
+        getChildren().addAll(shapeSection, lineSection);
+        // 初始全部禁用
+        setShapeControlsEnabled(false);
+        setLineControlsEnabled(false);
+        labelField.setText("");
+        shapeColorPicker.setValue(Color.WHITE);
+        lineTypeBox.getItems().setAll("直线", "折线", "曲线");
+        lineTypeBox.setValue(null);
+        strokeWidthSpinner.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 10, 2, 1));
+        arrowCheckBox.setSelected(true);
+        // 事件绑定
         labelField.setOnAction(e -> updateShape());
         labelField.textProperty().addListener((obs, oldVal, newVal) -> updateShape());
-        colorPicker.setOnAction(e -> updateShape());
+        shapeColorPicker.setOnAction(e -> updateShape());
+        lineTypeBox.setOnAction(e -> {
+            if (currentLine != null && lineTypeBox.getValue() != null) {
+                String val = lineTypeBox.getValue();
+                if (val.equals("直线")) currentLine.setLineType(ConnectionLine.LineType.STRAIGHT);
+                else if (val.equals("折线")) currentLine.setLineType(ConnectionLine.LineType.POLYLINE);
+                else currentLine.setLineType(ConnectionLine.LineType.CURVE);
+            }
+        });
+        lineColorPicker.setOnAction(e -> {
+            if (currentLine != null) currentLine.setColor(lineColorPicker.getValue());
+        });
+        strokeWidthSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (currentLine != null) currentLine.setStrokeWidth(newVal);
+        });
+        arrowCheckBox.setOnAction(e -> {
+            if (currentLine != null) currentLine.setArrowEnabled(arrowCheckBox.isSelected());
+        });
+    }
+
+    private void setShapeControlsEnabled(boolean enabled) {
+        labelField.setDisable(!enabled);
+        shapeColorPicker.setDisable(!enabled);
+    }
+    private void setLineControlsEnabled(boolean enabled) {
+        lineTypeBox.setDisable(!enabled);
+        lineColorPicker.setDisable(!enabled);
+        strokeWidthSpinner.setDisable(!enabled);
+        arrowCheckBox.setDisable(!enabled);
     }
 
     private void updateShape() {
@@ -38,65 +100,80 @@ public class PropertyPanel extends VBox {
             // 多选模式下，更新所有选中图形的属性
             for (FlowchartShape shape : selectedShapes) {
                 shape.setLabel(labelField.getText());
-                shape.setColor(colorPicker.getValue());
+                shape.setColor(shapeColorPicker.getValue());
             }
         } else if (currentShape != null) {
             // 单选模式下，只更新当前图形
             currentShape.setLabel(labelField.getText());
-            currentShape.setColor(colorPicker.getValue());
+            currentShape.setColor(shapeColorPicker.getValue());
         }
 
         if (onShapeChanged != null) onShapeChanged.run();
     }
 
-    // 供外部调用，显示选中图形属性
     public void showShape(FlowchartShape shape) {
-        isUpdatingFromShape = true;
-        currentShape = shape;
+        this.currentShape = shape;
+        this.selectedShapes = null;
         isMultiSelect = false;
-        selectedShapes = null;
-
-        if (shape != null) {
-            labelField.setText(shape.getLabel());
-            colorPicker.setValue(shape.getColor());
-            labelField.setDisable(false);
-            colorPicker.setDisable(false);
-        } else {
+        if (shape == null) {
             labelField.setText("");
-            colorPicker.setValue(Color.WHITE);
-            labelField.setDisable(true);
-            colorPicker.setDisable(true);
+            shapeColorPicker.setValue(Color.WHITE);
+            setShapeControlsEnabled(false);
+            return;
         }
+        setShapeControlsEnabled(true);
+        isUpdatingFromShape = true;
+        labelField.setText(shape.getLabel());
+        shapeColorPicker.setValue(shape.getColor());
         isUpdatingFromShape = false;
     }
 
-    // 新增方法：显示多个选中图形的属性
     public void showSelectedShapes(List<FlowchartShape> shapes) {
-        isUpdatingFromShape = true;
-        selectedShapes = shapes;
-        isMultiSelect = shapes != null && shapes.size() > 1;
-        currentShape = shapes != null && !shapes.isEmpty() ? shapes.get(shapes.size() - 1) : null;
-
-        if (shapes != null && !shapes.isEmpty()) {
-            // 如果所有选中图形的标签都相同，则显示该标签，否则显示空
-            String firstLabel = shapes.get(0).getLabel();
-            boolean allSameLabel = shapes.stream().allMatch(s -> s.getLabel().equals(firstLabel));
-            labelField.setText(allSameLabel ? firstLabel : "");
-
-            // 如果所有选中图形的颜色都相同，则显示该颜色，否则显示白色
-            Color firstColor = shapes.get(0).getColor();
-            boolean allSameColor = shapes.stream().allMatch(s -> s.getColor().equals(firstColor));
-            colorPicker.setValue(allSameColor ? firstColor : Color.WHITE);
-
-            labelField.setDisable(false);
-            colorPicker.setDisable(false);
-        } else {
+        this.selectedShapes = shapes;
+        this.currentShape = null;
+        isMultiSelect = true;
+        if (shapes == null || shapes.isEmpty()) {
             labelField.setText("");
-            colorPicker.setValue(Color.WHITE);
-            labelField.setDisable(true);
-            colorPicker.setDisable(true);
+            shapeColorPicker.setValue(Color.WHITE);
+            setShapeControlsEnabled(false);
+            return;
         }
+        setShapeControlsEnabled(true);
+        isUpdatingFromShape = true;
+        labelField.setText("");
+        shapeColorPicker.setValue(Color.WHITE);
         isUpdatingFromShape = false;
+    }
+
+    public void showLine(ConnectionLine line) {
+        this.currentLine = line;
+        if (line == null) {
+            lineTypeBox.setValue(null);
+            lineColorPicker.setValue(Color.BLACK);
+            strokeWidthSpinner.getValueFactory().setValue(2.0);
+            arrowCheckBox.setSelected(true);
+            setLineControlsEnabled(false);
+            return;
+        }
+        setLineControlsEnabled(true);
+        lineTypeBox.setValue(line.getLineType() == ConnectionLine.LineType.STRAIGHT ? "直线" :
+                             line.getLineType() == ConnectionLine.LineType.POLYLINE ? "折线" : "曲线");
+        lineColorPicker.setValue(line.getColor());
+        strokeWidthSpinner.getValueFactory().setValue(line.getStrokeWidth());
+        arrowCheckBox.setSelected(line.isArrowEnabled());
+    }
+
+    public void clearShape() {
+        labelField.setText("");
+        shapeColorPicker.setValue(Color.WHITE);
+        setShapeControlsEnabled(false);
+    }
+    public void clearLine() {
+        lineTypeBox.setValue(null);
+        lineColorPicker.setValue(Color.BLACK);
+        strokeWidthSpinner.getValueFactory().setValue(2.0);
+        arrowCheckBox.setSelected(true);
+        setLineControlsEnabled(false);
     }
 
     private Runnable onShapeChanged;

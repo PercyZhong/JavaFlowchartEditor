@@ -66,4 +66,17 @@ public class DiamondShape extends FlowchartShape {
         json.put("color", color.toString());
         return json;
     }
+
+    @Override
+    protected void setupConnectionPoints() {
+        connectionPoints.clear();
+        // 上
+        connectionPoints.add(new ConnectionPoint(this, width / 2, 0));
+        // 右
+        connectionPoints.add(new ConnectionPoint(this, width, height / 2));
+        // 下
+        connectionPoints.add(new ConnectionPoint(this, width / 2, height));
+        // 左
+        connectionPoints.add(new ConnectionPoint(this, 0, height / 2));
+    }
 }

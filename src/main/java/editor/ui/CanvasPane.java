@@ -18,6 +18,9 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.ClipboardContent;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import javafx.scene.shape.Polyline;
+import javafx.scene.shape.QuadCurve;
+import javafx.collections.ObservableList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +30,7 @@ public class CanvasPane extends Pane {
     private List<FlowchartShape> shapes = new ArrayList<>();
     private List<FlowchartShape> selectedShapes = new ArrayList<>();
     private List<FlowchartShape> clipboard = new ArrayList<>();
+    private List<ConnectionLine> connectionLines = new ArrayList<>();
     private String currentTool = "选择"; // 重新引入，用于顶部工具栏选择的图形类型
     private double dragOffsetX, dragOffsetY;
     private double selectStartX, selectStartY;
@@ -53,6 +57,14 @@ public class CanvasPane extends Pane {
     private List<Double> dragStartY = new ArrayList<>();
     private double dragOriginMouseX, dragOriginMouseY;
     private boolean isDraggingShapes = false;
+
+    // 连接线相关变量
+    private ConnectionPoint startConnectionPoint = null;
+    private ConnectionLine tempConnectionLine = null;
+
+    private boolean isConnecting = false;
+
+    private ConnectionLine selectedLine = null;
 
     public CanvasPane() {
         setStyle("-fx-background-color: #F8F8F8; -fx-border-color: #D0D0D0; -fx-border-width: 1;");
@@ -154,11 +166,31 @@ public class CanvasPane extends Pane {
     }
 
     private void handleMousePressed(MouseEvent event) {
-        this.requestFocus(); // 确保画布获得焦点
+        this.requestFocus();
         mousePressedX = event.getX();
         mousePressedY = event.getY();
         isDraggingShapes = false;
-        isDrawingNewShape = false; // 默认不处于绘制新图形状态
+        isDrawingNewShape = false;
+
+        // 优先检测是否点击了连接线
+        ConnectionLine clickedLine = findConnectionLine(event.getX(), event.getY());
+        if (clickedLine != null) {
+            // 只允许单选线
+            if (selectedLine != null) selectedLine.setSelected(false);
+            selectedLine = clickedLine;
+            selectedLine.setSelected(true);
+            // 取消所有图形选中
+            selectedShapes.forEach(s -> { s.setSelected(false); s.hideConnectionPoints(); });
+            selectedShapes.clear();
+            if (propertyPanel != null) propertyPanel.showLine(selectedLine);
+            redraw();
+            return;
+        }
+        // 取消线条选中
+        if (selectedLine != null) {
+            selectedLine.setSelected(false);
+            selectedLine = null;
+        }
 
         // 如果当前工具不是"选择"，则准备绘制新图形
         if (!"选择".equals(currentTool)) {
@@ -167,7 +199,20 @@ public class CanvasPane extends Pane {
             if (tempDrawingShape != null) {
                 getChildren().add(tempDrawingShape);
             }
-            return; // 不再执行下面的选择和拖动逻辑
+            return;
+        }
+
+        // 检查是否点击了连接点（只有点在连接点上才允许开始连线）
+        ConnectionPoint cp = findConnectionPoint(event.getX(), event.getY());
+        if (cp != null) {
+            startConnectionPoint = cp;
+            tempConnectionLine = new ConnectionLine();
+            tempConnectionLine.setStartPoint(startConnectionPoint);
+            tempConnectionLine.setTempEnd(startConnectionPoint.getX(), startConnectionPoint.getY());
+            getChildren().addAll(tempConnectionLine.getLine(), tempConnectionLine.getArrow());
+            isConnecting = true;
+            redraw();
+            return;
         }
 
         // 先处理点击选中逻辑 (只有当 currentTool 是"选择"时才执行)
@@ -183,13 +228,18 @@ public class CanvasPane extends Pane {
         if (clickedShape != null) {
             if (!selectedShapes.contains(clickedShape)) {
                 if (!event.isShiftDown()) { // 如果没有按住Shift，清除之前的选择
-                    selectedShapes.forEach(s -> s.setSelected(false));
+                    selectedShapes.forEach(s -> {
+                        s.setSelected(false);
+                        s.hideConnectionPoints();
+                    });
                     selectedShapes.clear();
                 }
                 selectedShapes.add(clickedShape);
                 clickedShape.setSelected(true);
+                clickedShape.showConnectionPoints();
             } else if (event.isShiftDown()) { // 按住 Shift 可以取消选择已选中的图形
                 clickedShape.setSelected(false);
+                clickedShape.hideConnectionPoints();
                 selectedShapes.remove(clickedShape);
             }
             isDraggingShapes = true; // 准备拖动已选中的图形
@@ -202,7 +252,10 @@ public class CanvasPane extends Pane {
                 dragStartY.add(s.getY());
             }
         } else { // 点击空白处，清除所有选中
-            selectedShapes.forEach(s -> s.setSelected(false));
+            selectedShapes.forEach(s -> {
+                s.setSelected(false);
+                s.hideConnectionPoints();
+            });
             selectedShapes.clear();
             isSelecting = true;
             selectStartX = event.getX();
@@ -241,7 +294,7 @@ public class CanvasPane extends Pane {
             double height = Math.abs(endY - startY);
 
             updateTempJavaFXShape(tempDrawingShape, currentTool, minX, minY, width, height);
-            return; // 不再执行下面的拖动/框选逻辑
+            return;
         }
 
         // 拖动选中图形
@@ -256,6 +309,13 @@ public class CanvasPane extends Pane {
             redraw();
             return;
         }
+
+        // 处理连接线的拖动（连线模式下实时显示临时线和箭头）
+        if (isConnecting && startConnectionPoint != null && tempConnectionLine != null) {
+            tempConnectionLine.setTempEnd(x, y);
+            return;
+        }
+
         // 只有拖动距离大于一定阈值时才进入框选
         if (!isSelecting && Math.abs(x - selectStartX) > 5 && Math.abs(y - selectStartY) > 5) {
             isSelecting = true;
@@ -276,6 +336,24 @@ public class CanvasPane extends Pane {
 
     private void handleMouseReleased(MouseEvent event) {
         double x = event.getX(), y = event.getY();
+
+        // 处理连接线的完成
+        if (startConnectionPoint != null && tempConnectionLine != null) {
+            ConnectionPoint endPoint = findConnectionPoint(x, y);
+            if (endPoint != null && endPoint != startConnectionPoint) {
+                tempConnectionLine.setEndPoint(endPoint);
+                connectionLines.add(tempConnectionLine);
+                startConnectionPoint.getParentShape().addOutgoingLine(tempConnectionLine);
+                endPoint.getParentShape().addIncomingLine(tempConnectionLine);
+            } else {
+                getChildren().removeAll(tempConnectionLine.getLine(), tempConnectionLine.getArrow());
+            }
+            startConnectionPoint = null;
+            tempConnectionLine = null;
+            isConnecting = false;
+            redraw();
+            return;
+        }
 
         // 完成新图形的绘制
         if (isDrawingNewShape && tempDrawingShape != null) {
@@ -534,18 +612,45 @@ public class CanvasPane extends Pane {
 
     public void redraw() {
         getChildren().removeIf(n -> (n instanceof Shape && n != tempDrawingShape && n != selectionRect) || n instanceof Text);
+        
+        // 绘制所有连接线
+        for (ConnectionLine line : connectionLines) {
+            getChildren().addAll(line.getLine(), line.getArrow());
+        }
+        
+        // 绘制所有图形
         for (FlowchartShape shape : shapes) {
             Shape fxShape = shape.getShape();
             getChildren().add(fxShape);
             Text text = new Text(shape.getX() + 20, shape.getY() + shape.getHeight() / 2, shape.getLabel());
             getChildren().add(text);
+            
+            // 绘制连接点
+            for (ConnectionPoint point : shape.getConnectionPoints()) {
+                if (isConnecting || shape.isSelected()) {
+                    point.show();
+                    getChildren().add(point.getVisualPoint());
+                } else {
+                    point.hide();
+                }
+            }
         }
+        
         // 确保临时绘制的图形在最顶层
         if (tempDrawingShape != null && !getChildren().contains(tempDrawingShape)) {
             getChildren().add(tempDrawingShape);
         }
         if (selectionRect.isVisible() && !getChildren().contains(selectionRect)) {
             getChildren().add(selectionRect);
+        }
+        // 保证临时连线在最顶层
+        if (isConnecting && tempConnectionLine != null) {
+            if (!getChildren().contains(tempConnectionLine.getLine())) {
+                getChildren().add(tempConnectionLine.getLine());
+            }
+            if (!getChildren().contains(tempConnectionLine.getArrow())) {
+                getChildren().add(tempConnectionLine.getArrow());
+            }
         }
     }
 
@@ -685,5 +790,51 @@ public class CanvasPane extends Pane {
     protected void layoutChildren() {
         super.layoutChildren();
         setupGrid();
+    }
+
+    private ConnectionPoint findConnectionPoint(double x, double y) {
+        for (FlowchartShape shape : shapes) {
+            for (ConnectionPoint point : shape.getConnectionPoints()) {
+                double dx = point.getX() - x;
+                double dy = point.getY() - y;
+                if (point.isVisible() && Math.sqrt(dx * dx + dy * dy) < 12) {
+                    return point;
+                }
+            }
+        }
+        return null;
+    }
+
+    private ConnectionLine findConnectionLine(double x, double y) {
+        for (ConnectionLine line : connectionLines) {
+            Shape shape = line.getLine();
+            if (shape instanceof javafx.scene.shape.Line) {
+                javafx.scene.shape.Line l = (javafx.scene.shape.Line) shape;
+                if (pointToSegmentDistance(x, y, l.getStartX(), l.getStartY(), l.getEndX(), l.getEndY()) < 8) return line;
+            } else if (shape instanceof Polyline) {
+                Polyline poly = (Polyline) shape;
+                ObservableList<Double> pts = poly.getPoints();
+                for (int i = 0; i < pts.size() - 2; i += 2) {
+                    double x1 = pts.get(i), y1 = pts.get(i + 1);
+                    double x2 = pts.get(i + 2), y2 = pts.get(i + 3);
+                    if (pointToSegmentDistance(x, y, x1, y1, x2, y2) < 8) return line;
+                }
+            } else if (shape instanceof QuadCurve) {
+                QuadCurve curve = (QuadCurve) shape;
+                // 近似用端点和控制点分段检测
+                if (pointToSegmentDistance(x, y, curve.getStartX(), curve.getStartY(), curve.getControlX(), curve.getControlY()) < 8) return line;
+                if (pointToSegmentDistance(x, y, curve.getControlX(), curve.getControlY(), curve.getEndX(), curve.getEndY()) < 8) return line;
+            }
+        }
+        return null;
+    }
+
+    private double pointToSegmentDistance(double px, double py, double x1, double y1, double x2, double y2) {
+        double dx = x2 - x1, dy = y2 - y1;
+        if (dx == 0 && dy == 0) return Math.hypot(px - x1, py - y1);
+        double t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+        t = Math.max(0, Math.min(1, t));
+        double projX = x1 + t * dx, projY = y1 + t * dy;
+        return Math.hypot(px - projX, py - projY);
     }
 }

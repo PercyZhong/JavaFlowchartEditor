@@ -16,6 +16,15 @@ public class RectangleShape extends FlowchartShape {
     }
 
     @Override
+    protected void setupConnectionPoints() {
+        // 添加四个边的中点作为连接点
+        connectionPoints.add(new ConnectionPoint(this, width / 2, 0)); // 上边中点
+        connectionPoints.add(new ConnectionPoint(this, width, height / 2)); // 右边中点
+        connectionPoints.add(new ConnectionPoint(this, width / 2, height)); // 下边中点
+        connectionPoints.add(new ConnectionPoint(this, 0, height / 2)); // 左边中点
+    }
+
+    @Override
     public Shape getShape() {
         System.out.println("RectangleShape.getShape() called for " + this.label + ", using color: " + this.color);
         // 更新图形的位置、大小、颜色
@@ -25,12 +34,14 @@ public class RectangleShape extends FlowchartShape {
         rect.setHeight(height);
         rect.setFill(color);
         rect.setStroke(selected ? Color.RED : Color.BLACK);
+        rect.setStrokeWidth(selected ? 2.0 : 1.0);
         return rect;
     }
 
     @Override
     public boolean contains(double px, double py) {
-        return rect.contains(px, py); // 使用 JavaFX 自带的 contains 方法，准确可靠
+        return px >= x && px <= x + width &&
+               py >= y && py <= y + height;
     }
 
     @Override

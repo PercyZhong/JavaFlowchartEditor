@@ -59,4 +59,18 @@ public class HexagonShape extends FlowchartShape {
         json.put("color", color.toString());
         return json;
     }
+
+    @Override
+    protected void setupConnectionPoints() {
+        connectionPoints.clear();
+        double cx = width / 2;
+        double cy = height / 2;
+        double r = Math.min(width, height) / 2;
+        for (int i = 0; i < 6; i++) {
+            double angle = Math.toRadians(60 * i - 30); // 使第一个点朝右
+            double px = cx + r * Math.cos(angle);
+            double py = cy + r * Math.sin(angle);
+            connectionPoints.add(new ConnectionPoint(this, px, py));
+        }
+    }
 } 
