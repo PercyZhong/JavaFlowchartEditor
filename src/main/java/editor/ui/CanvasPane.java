@@ -176,8 +176,10 @@ public class CanvasPane extends Pane {
 
         if (clickedShape != null) {
             if (!selectedShapes.contains(clickedShape)) {
-                selectedShapes.forEach(s -> s.setSelected(false));
-                selectedShapes.clear();
+                if (!event.isShiftDown()) { // 如果没有按住Shift，清除之前的选择
+                    selectedShapes.forEach(s -> s.setSelected(false));
+                    selectedShapes.clear();
+                }
                 selectedShapes.add(clickedShape);
                 clickedShape.setSelected(true);
             } else if (event.isShiftDown()) { // 按住 Shift 可以取消选择已选中的图形
@@ -206,7 +208,13 @@ public class CanvasPane extends Pane {
             selectionRect.setVisible(true);
         }
         if (propertyPanel != null) {
-            propertyPanel.showShape(selectedShapes.isEmpty() ? null : selectedShapes.get(selectedShapes.size() - 1));
+            if (selectedShapes.size() > 1) {
+                propertyPanel.showSelectedShapes(selectedShapes);
+            } else if (!selectedShapes.isEmpty()) {
+                propertyPanel.showShape(selectedShapes.get(0));
+            } else {
+                propertyPanel.showShape(null);
+            }
         }
         redraw();
     }
@@ -340,6 +348,17 @@ public class CanvasPane extends Pane {
             }
             selectionRect.setVisible(false);
             isSelecting = false;
+            
+            // 更新属性面板显示
+            if (propertyPanel != null) {
+                if (selectedShapes.size() > 1) {
+                    propertyPanel.showSelectedShapes(selectedShapes);
+                } else if (!selectedShapes.isEmpty()) {
+                    propertyPanel.showShape(selectedShapes.get(0));
+                } else {
+                    propertyPanel.showShape(null);
+                }
+            }
         }
         isDraggingShapes = false;
         redraw();
