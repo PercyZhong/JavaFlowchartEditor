@@ -16,6 +16,7 @@ import javafx.scene.control.SpinnerValueFactory;
 
 public class PropertyPanel extends VBox {
     private final TextField labelField = new TextField();
+    private final TextField linkField = new TextField();
     private final ColorPicker shapeColorPicker = new ColorPicker();
     private final ColorPicker lineColorPicker = new ColorPicker();
     private boolean isUpdatingFromShape = false; // 添加标志，用于防止循环更新
@@ -40,7 +41,8 @@ public class PropertyPanel extends VBox {
         // 图形属性区控件
         shapeSection.getChildren().addAll(
             new Label("文字标签："), labelField,
-            new Label("颜色："), shapeColorPicker
+            new Label("颜色："), shapeColorPicker,
+            new Label("链接："), linkField
         );
         // 线条属性区控件
         lineSection.getChildren().addAll(
@@ -80,11 +82,15 @@ public class PropertyPanel extends VBox {
         arrowCheckBox.setOnAction(e -> {
             if (currentLine != null) currentLine.setArrowEnabled(arrowCheckBox.isSelected());
         });
+        linkField.setPromptText("http(s)://...");
+        linkField.setOnAction(e -> updateShape());
+        linkField.textProperty().addListener((obs, oldVal, newVal) -> updateShape());
     }
 
     private void setShapeControlsEnabled(boolean enabled) {
         labelField.setDisable(!enabled);
         shapeColorPicker.setDisable(!enabled);
+        linkField.setDisable(!enabled);
     }
     private void setLineControlsEnabled(boolean enabled) {
         lineTypeBox.setDisable(!enabled);
@@ -97,15 +103,15 @@ public class PropertyPanel extends VBox {
         if (isUpdatingFromShape) return;
 
         if (isMultiSelect && selectedShapes != null) {
-            // 多选模式下，更新所有选中图形的属性
             for (FlowchartShape shape : selectedShapes) {
                 shape.setLabel(labelField.getText());
                 shape.setColor(shapeColorPicker.getValue());
+                shape.setLink(linkField.getText());
             }
         } else if (currentShape != null) {
-            // 单选模式下，只更新当前图形
             currentShape.setLabel(labelField.getText());
             currentShape.setColor(shapeColorPicker.getValue());
+            currentShape.setLink(linkField.getText());
         }
 
         if (onShapeChanged != null) onShapeChanged.run();
@@ -118,6 +124,7 @@ public class PropertyPanel extends VBox {
         if (shape == null) {
             labelField.setText("");
             shapeColorPicker.setValue(Color.WHITE);
+            linkField.setText("");
             setShapeControlsEnabled(false);
             return;
         }
@@ -125,6 +132,7 @@ public class PropertyPanel extends VBox {
         isUpdatingFromShape = true;
         labelField.setText(shape.getLabel());
         shapeColorPicker.setValue(shape.getColor());
+        linkField.setText(shape.getLink());
         isUpdatingFromShape = false;
     }
 
@@ -135,6 +143,7 @@ public class PropertyPanel extends VBox {
         if (shapes == null || shapes.isEmpty()) {
             labelField.setText("");
             shapeColorPicker.setValue(Color.WHITE);
+            linkField.setText("");
             setShapeControlsEnabled(false);
             return;
         }
@@ -142,6 +151,7 @@ public class PropertyPanel extends VBox {
         isUpdatingFromShape = true;
         labelField.setText("");
         shapeColorPicker.setValue(Color.WHITE);
+        linkField.setText("");
         isUpdatingFromShape = false;
     }
 
@@ -166,6 +176,7 @@ public class PropertyPanel extends VBox {
     public void clearShape() {
         labelField.setText("");
         shapeColorPicker.setValue(Color.WHITE);
+        linkField.setText("");
         setShapeControlsEnabled(false);
     }
     public void clearLine() {

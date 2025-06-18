@@ -15,6 +15,11 @@ public class RectangleShape extends FlowchartShape {
         rect.setStroke(Color.BLACK);
     }
 
+    public RectangleShape(double x, double y, double width, double height, String label, String link) {
+        this(x, y, width, height, label);
+        this.link = link;
+    }
+
     @Override
     protected void setupConnectionPoints() {
         // 添加四个边的中点作为连接点
@@ -59,6 +64,7 @@ public class RectangleShape extends FlowchartShape {
         json.put("height", height);
         json.put("label", label);
         json.put("color", color.toString()); // Color to String
+        json.put("link", link);
         return json;
     }
 }

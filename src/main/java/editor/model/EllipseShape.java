@@ -15,6 +15,11 @@ public class EllipseShape extends FlowchartShape {
         ellipse.setStroke(Color.BLACK);
     }
 
+    public EllipseShape(double x, double y, double width, double height, String label, String link) {
+        this(x, y, width, height, label);
+        this.link = link;
+    }
+
     @Override
     public Shape getShape() {
         // 更新图形位置和状态
@@ -47,6 +52,7 @@ public class EllipseShape extends FlowchartShape {
         json.put("height", height);
         json.put("label", label);
         json.put("color", color.toString());
+        json.put("link", link);
         return json;
     }
 

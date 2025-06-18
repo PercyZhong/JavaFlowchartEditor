@@ -16,6 +16,11 @@ public class HexagonShape extends FlowchartShape {
         hexagon.setStroke(Color.BLACK);
     }
 
+    public HexagonShape(double x, double y, double width, double height, String label, String link) {
+        this(x, y, width, height, label);
+        this.link = link;
+    }
+
     private void updateHexagonPoints() {
         double centerX = x + width / 2;
         double centerY = y + height / 2;
@@ -57,6 +62,7 @@ public class HexagonShape extends FlowchartShape {
         json.put("height", height);
         json.put("label", label);
         json.put("color", color.toString());
+        json.put("link", link);
         return json;
     }
 

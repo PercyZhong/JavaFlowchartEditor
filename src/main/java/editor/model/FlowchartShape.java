@@ -14,6 +14,7 @@ public abstract class FlowchartShape implements Cloneable {
     protected List<ConnectionPoint> connectionPoints = new ArrayList<>();
     protected List<ConnectionLine> incomingLines = new ArrayList<>();
     protected List<ConnectionLine> outgoingLines = new ArrayList<>();
+    protected String link = "";
 
     public FlowchartShape(double x, double y, double width, double height, String label) {
         this.x = x; this.y = y; this.width = width; this.height = height; this.label = label;
@@ -83,6 +84,7 @@ public abstract class FlowchartShape implements Cloneable {
     public Color getColor() { return color; }
     public String getLabel() { return label; }
     public boolean isSelected() { return selected; }
+    public String getLink() { return link; }
 
     public void setX(double x) {
         this.x = x;
@@ -102,12 +104,12 @@ public abstract class FlowchartShape implements Cloneable {
     }
     public void setLabel(String label) { this.label = label; }
     public void setSelected(boolean selected) { this.selected = selected; }
+    public void setLink(String link) { this.link = link; }
 
     @Override
     public FlowchartShape clone() throws CloneNotSupportedException {
         FlowchartShape cloned = (FlowchartShape) super.clone();
-        // 对于基本类型，super.clone() 已经足够。
-        // 如果有复杂对象，需要在这里进行深拷贝。
+        cloned.link = this.link;
         return cloned;
     }
 }

@@ -95,27 +95,27 @@ public class MainWindow extends BorderPane {
         double height = json.getDouble("height");
         String label = json.getString("label");
         Color color = Color.valueOf(json.getString("color"));
+        String link = json.has("link") ? json.getString("link") : "";
 
         FlowchartShape newShape = null;
         switch (type) {
             case "rectangle":
-                newShape = new RectangleShape(x, y, width, height, label);
+                newShape = new RectangleShape(x, y, width, height, label, link);
                 break;
             case "ellipse":
-                newShape = new EllipseShape(x, y, width, height, label);
+                newShape = new EllipseShape(x, y, width, height, label, link);
                 break;
             case "diamond":
-                newShape = new DiamondShape(x, y, width, height, label);
+                newShape = new DiamondShape(x, y, width, height, label, link);
                 break;
             case "parallelogram":
-                newShape = new ParallelogramShape(x, y, width, height, label);
+                newShape = new ParallelogramShape(x, y, width, height, label, link);
                 break;
             case "circle":
-                // Circle的x,y是中心点，加载时需要调整
-                newShape = new CircleShape(x, y, width, height, label);
+                newShape = new CircleShape(x, y, width, height, label, link);
                 break;
             case "hexagon":
-                newShape = new HexagonShape(x, y, width, height, label);
+                newShape = new HexagonShape(x, y, width, height, label, link);
                 break;
         }
         if (newShape != null) {

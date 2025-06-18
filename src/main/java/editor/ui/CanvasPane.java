@@ -84,6 +84,26 @@ public class CanvasPane extends Pane {
         selectionRect.getStrokeDashArray().addAll(5.0, 5.0);
         selectionRect.setVisible(false);
         getChildren().add(selectionRect);
+
+        // 鼠标移动时，动态改变指针形状
+        this.setOnMouseMoved(event -> {
+            boolean ctrl = event.isControlDown();
+            boolean onLinkShape = false;
+            if (ctrl) {
+                for (int i = shapes.size() - 1; i >= 0; i--) {
+                    FlowchartShape s = shapes.get(i);
+                    if (s.contains(event.getX(), event.getY()) && s.getLink() != null && !s.getLink().isEmpty()) {
+                        onLinkShape = true;
+                        break;
+                    }
+                }
+            }
+            if (onLinkShape) {
+                setCursor(javafx.scene.Cursor.HAND);
+            } else {
+                setCursor(javafx.scene.Cursor.DEFAULT);
+            }
+        });
     }
 
     public void setCurrentTool(String tool) {
@@ -178,6 +198,29 @@ public class CanvasPane extends Pane {
         isDraggingShapes = false;
         isDrawingNewShape = false;
 
+        // 先检测是否点击了图形并需要跳转
+        FlowchartShape clickedShape = null;
+        for (int i = shapes.size() - 1; i >= 0; i--) {
+            FlowchartShape s = shapes.get(i);
+            if (s.contains(event.getX(), event.getY())) {
+                clickedShape = s;
+                break;
+            }
+        }
+        if (event.isControlDown() && clickedShape != null && clickedShape.getLink() != null && !clickedShape.getLink().isEmpty()) {
+            String url = clickedShape.getLink();
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "http://" + url;
+            }
+            try {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            event.consume();
+            return;
+        }
+
         // 优先检测是否点击了连接线
         ConnectionLine clickedLine = findConnectionLine(event.getX(), event.getY());
         if (clickedLine != null) {
@@ -222,15 +265,6 @@ public class CanvasPane extends Pane {
         }
 
         // 先处理点击选中逻辑 (只有当 currentTool 是"选择"时才执行)
-        FlowchartShape clickedShape = null;
-        for (int i = shapes.size() - 1; i >= 0; i--) { // 从上层开始检测
-            FlowchartShape s = shapes.get(i);
-            if (s.contains(event.getX(), event.getY())) {
-                clickedShape = s;
-                break;
-            }
-        }
-
         if (clickedShape != null) {
             if (!selectedShapes.contains(clickedShape)) {
                 if (!event.isShiftDown()) { // 如果没有按住Shift，清除之前的选择
