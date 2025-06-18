@@ -26,23 +26,23 @@ public class ToolbarPanel extends ToolBar {
         this.mainWindow = mainWindow;
 
         // 文件操作按钮
-        Button newBtn = createToolbarButton("new.png", "新建", null);
+        Button newBtn = createToolbarButton("新建", null);
         newBtn.setOnAction(e -> mainWindow.newFile());
-        Button openBtn = createToolbarButton("open.png", "打开", null);
+        Button openBtn = createToolbarButton("打开", null);
         openBtn.setOnAction(e -> mainWindow.openFile());
-        Button saveBtn = createToolbarButton("save.png", "保存", null);
+        Button saveBtn = createToolbarButton("保存", null);
         saveBtn.setOnAction(e -> mainWindow.saveFile());
 
         // 编辑操作按钮
-        Button copyBtn = createToolbarButton("copy.png", "复制 (Ctrl+C)", new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN));
+        Button copyBtn = createToolbarButton("复制 (Ctrl+C)", new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN));
         copyBtn.setOnAction(e -> canvas.copySelectedShapes());
-        Button pasteBtn = createToolbarButton("paste.png", "粘贴 (Ctrl+V)", new KeyCodeCombination(KeyCode.V, KeyCombination.CONTROL_DOWN));
+        Button pasteBtn = createToolbarButton("粘贴 (Ctrl+V)", new KeyCodeCombination(KeyCode.V, KeyCombination.CONTROL_DOWN));
         pasteBtn.setOnAction(e -> canvas.pasteShapes());
-        Button deleteBtn = createToolbarButton("delete.png", "删除 (Del)", new KeyCodeCombination(KeyCode.DELETE));
+        Button deleteBtn = createToolbarButton("删除 (Del)", new KeyCodeCombination(KeyCode.DELETE));
         deleteBtn.setOnAction(e -> canvas.deleteSelectedShapes());
-        Button undoBtn = createToolbarButton("undo.png", "撤销 (Ctrl+Z)", new KeyCodeCombination(KeyCode.Z, KeyCombination.CONTROL_DOWN));
+        Button undoBtn = createToolbarButton("撤销 (Ctrl+Z)", new KeyCodeCombination(KeyCode.Z, KeyCombination.CONTROL_DOWN));
         undoBtn.setOnAction(e -> canvas.undo());
-        Button redoBtn = createToolbarButton("redo.png", "重做 (Ctrl+Y)", new KeyCodeCombination(KeyCode.Y, KeyCombination.CONTROL_DOWN));
+        Button redoBtn = createToolbarButton("重做 (Ctrl+Y)", new KeyCodeCombination(KeyCode.Y, KeyCombination.CONTROL_DOWN));
         redoBtn.setOnAction(e -> canvas.redo());
 
         // 工具选择按钮 (基础图形)
@@ -70,23 +70,26 @@ public class ToolbarPanel extends ToolBar {
         parallelogramToolBtn.setOnAction(e -> setCurrentTool("平行四边形"));
         hexagonToolBtn.setOnAction(e -> setCurrentTool("六边形"));
 
+        // 添加网格控制按钮
+        Button gridBtn = createToolButton("网格");
+        gridBtn.setOnAction(e -> canvas.toggleGrid());
+        
+        Button snapBtn = createToolButton("对齐");
+        snapBtn.setOnAction(e -> canvas.toggleSnapToGrid());
+
         getItems().addAll(
                 newBtn, openBtn, saveBtn, new Separator(),
                 copyBtn, pasteBtn, deleteBtn, undoBtn, redoBtn, new Separator(),
-                selectToolBtn, rectToolBtn, ellipseToolBtn, diamondToolBtn, circleToolBtn, parallelogramToolBtn, hexagonToolBtn
+                selectToolBtn, rectToolBtn, ellipseToolBtn, diamondToolBtn, circleToolBtn, parallelogramToolBtn, hexagonToolBtn,
+                new Separator(), gridBtn, snapBtn
         );
 
         // 默认选择"选择"工具
         setCurrentTool("选择");
     }
 
-    private Button createToolbarButton(String iconFileName, String tooltip, KeyCombination accelerator) {
-        Image image = new Image(getClass().getResourceAsStream("/icons/" + iconFileName));
-        ImageView imageView = new ImageView(image);
-        imageView.setFitHeight(20);
-        imageView.setFitWidth(20);
-        Button button = new Button();
-        button.setGraphic(imageView);
+    private Button createToolbarButton(String tooltip, KeyCombination accelerator) {
+        Button button = new Button(tooltip);
         button.setTooltip(new Tooltip(tooltip));
         if (accelerator != null) {
             button.getProperties().put("accelerator", accelerator);

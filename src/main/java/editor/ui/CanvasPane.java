@@ -44,6 +44,10 @@ public class CanvasPane extends Pane {
     private Stack<Command> redoStack = new Stack<>();
 
     private static final int GRID_SIZE = 20;
+    private boolean showGrid = true; // 是否显示网格
+    private boolean snapToGridEnabled = true; // 是否启用网格对齐
+    private List<javafx.scene.shape.Line> gridLines = new ArrayList<>(); // 存储网格线
+
     // 记录拖动前每个选中图形的初始位置
     private List<Double> dragStartX = new ArrayList<>();
     private List<Double> dragStartY = new ArrayList<>();
@@ -55,6 +59,7 @@ public class CanvasPane extends Pane {
         setupMouseHandlers();
         setupKeyHandlers();
         setupDragAndDropHandlers(); // New method for drag and drop
+        setupGrid();
 
         selectionRect.setStroke(Color.BLUE);
         selectionRect.setFill(Color.LIGHTBLUE.deriveColor(1, 1, 1, 0.3));
@@ -109,8 +114,9 @@ public class CanvasPane extends Pane {
             boolean success = false;
             if (db.hasString()) {
                 String shapeType = db.getString();
-                double x = event.getX();
-                double y = event.getY();
+                // 应用网格对齐到拖放位置
+                double x = snapToGridEnabled ? snapToGrid(event.getX()) : event.getX();
+                double y = snapToGridEnabled ? snapToGrid(event.getY()) : event.getY();
 
                 FlowchartShape newShape = null;
                 switch (shapeType) {
@@ -226,8 +232,8 @@ public class CanvasPane extends Pane {
         if (isDrawingNewShape && tempDrawingShape != null) {
             double startX = mousePressedX;
             double startY = mousePressedY;
-            double endX = x;
-            double endY = y;
+            double endX = snapToGridEnabled ? snapToGrid(x) : x;
+            double endY = snapToGridEnabled ? snapToGrid(y) : y;
 
             double minX = Math.min(startX, endX);
             double minY = Math.min(startY, endY);
@@ -240,8 +246,8 @@ public class CanvasPane extends Pane {
 
         // 拖动选中图形
         if (isDraggingShapes && !selectedShapes.isEmpty()) {
-            double dx = snapToGrid(x - dragOriginMouseX);
-            double dy = snapToGrid(y - dragOriginMouseY);
+            double dx = snapToGridEnabled ? snapToGrid(x - dragOriginMouseX) : (x - dragOriginMouseX);
+            double dy = snapToGridEnabled ? snapToGrid(y - dragOriginMouseY) : (y - dragOriginMouseY);
             for (int i = 0; i < selectedShapes.size(); i++) {
                 FlowchartShape s = selectedShapes.get(i);
                 s.setX(dragStartX.get(i) + dx);
@@ -276,8 +282,8 @@ public class CanvasPane extends Pane {
             getChildren().remove(tempDrawingShape); // 移除临时图形
             double startX = mousePressedX;
             double startY = mousePressedY;
-            double endX = x;
-            double endY = y;
+            double endX = snapToGridEnabled ? snapToGrid(x) : x;
+            double endY = snapToGridEnabled ? snapToGrid(y) : y;
 
             double actualX = Math.min(startX, endX);
             double actualY = Math.min(startY, endY);
@@ -633,5 +639,51 @@ public class CanvasPane extends Pane {
     // 辅助方法：将坐标吸附到网格
     private double snapToGrid(double value) {
         return Math.round(value / GRID_SIZE) * GRID_SIZE;
+    }
+
+    // 设置网格
+    private void setupGrid() {
+        // 清除现有的网格线
+        gridLines.forEach(line -> getChildren().remove(line));
+        gridLines.clear();
+
+        if (!showGrid) return;
+
+        // 创建垂直线
+        for (int x = 0; x < getWidth(); x += GRID_SIZE) {
+            javafx.scene.shape.Line line = new javafx.scene.shape.Line(x, 0, x, getHeight());
+            line.setStroke(Color.LIGHTGRAY);
+            line.setStrokeWidth(0.5);
+            gridLines.add(line);
+            getChildren().add(line);
+        }
+
+        // 创建水平线
+        for (int y = 0; y < getHeight(); y += GRID_SIZE) {
+            javafx.scene.shape.Line line = new javafx.scene.shape.Line(0, y, getWidth(), y);
+            line.setStroke(Color.LIGHTGRAY);
+            line.setStrokeWidth(0.5);
+            gridLines.add(line);
+            getChildren().add(line);
+        }
+    }
+
+    // 切换网格显示
+    public void toggleGrid() {
+        showGrid = !showGrid;
+        setupGrid();
+        redraw();
+    }
+
+    // 切换网格对齐
+    public void toggleSnapToGrid() {
+        snapToGridEnabled = !snapToGridEnabled;
+    }
+
+    // 重写布局方法以更新网格
+    @Override
+    protected void layoutChildren() {
+        super.layoutChildren();
+        setupGrid();
     }
 }
