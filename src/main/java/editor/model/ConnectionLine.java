@@ -7,6 +7,8 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.shape.Polyline;
 import javafx.scene.shape.QuadCurve;
 import javafx.scene.shape.Shape;
+import org.json.JSONObject;
+import java.util.List;
 
 public class ConnectionLine {
     private Shape line; // 可为Line、Polyline、QuadCurve
@@ -163,4 +165,41 @@ public class ConnectionLine {
         }
     }
     public boolean isSelected() { return selected; }
+
+    public JSONObject toJsonObject(List<FlowchartShape> shapes) {
+        JSONObject json = new JSONObject();
+        // 保存起点终点的图形索引和连接点索引
+        int startShapeIdx = shapes.indexOf(startPoint.getParentShape());
+        int startPointIdx = startPoint.getParentShape().getConnectionPoints().indexOf(startPoint);
+        int endShapeIdx = endPoint.getParentShape() != null ? shapes.indexOf(endPoint.getParentShape()) : -1;
+        int endPointIdx = endPoint.getParentShape() != null ? endPoint.getParentShape().getConnectionPoints().indexOf(endPoint) : -1;
+        json.put("startShape", startShapeIdx);
+        json.put("startPoint", startPointIdx);
+        json.put("endShape", endShapeIdx);
+        json.put("endPoint", endPointIdx);
+        json.put("lineType", lineType.toString());
+        json.put("color", color.toString());
+        json.put("strokeWidth", strokeWidth);
+        json.put("arrowEnabled", arrowEnabled);
+        return json;
+    }
+
+    public static ConnectionLine fromJsonObject(JSONObject json, List<FlowchartShape> shapes) {
+        int startShapeIdx = json.getInt("startShape");
+        int startPointIdx = json.getInt("startPoint");
+        int endShapeIdx = json.getInt("endShape");
+        int endPointIdx = json.getInt("endPoint");
+        FlowchartShape startShape = shapes.get(startShapeIdx);
+        ConnectionPoint startPoint = startShape.getConnectionPoints().get(startPointIdx);
+        FlowchartShape endShape = endShapeIdx >= 0 ? shapes.get(endShapeIdx) : null;
+        ConnectionPoint endPoint = (endShape != null && endPointIdx >= 0) ? endShape.getConnectionPoints().get(endPointIdx) : null;
+        ConnectionLine line = new ConnectionLine();
+        line.setStartPoint(startPoint);
+        if (endPoint != null) line.setEndPoint(endPoint);
+        if (json.has("lineType")) line.setLineType(LineType.valueOf(json.getString("lineType")));
+        if (json.has("color")) line.setColor(Color.valueOf(json.getString("color")));
+        if (json.has("strokeWidth")) line.setStrokeWidth(json.getDouble("strokeWidth"));
+        if (json.has("arrowEnabled")) line.setArrowEnabled(json.getBoolean("arrowEnabled"));
+        return line;
+    }
 } 

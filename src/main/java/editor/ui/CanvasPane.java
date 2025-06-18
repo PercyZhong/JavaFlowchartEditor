@@ -454,11 +454,13 @@ public class CanvasPane extends Pane {
     public void clearCanvas() {
         shapes.clear();
         selectedShapes.clear();
+        connectionLines.clear();
         undoStack.clear();
         redoStack.clear();
         redraw();
         if (propertyPanel != null) {
             propertyPanel.showShape(null);
+            propertyPanel.showLine(null);
         }
     }
 
@@ -467,11 +469,18 @@ public class CanvasPane extends Pane {
      * @return 包含所有图形数据的JSON字符串。
      */
     public String saveShapesToJson() {
-        JSONArray jsonArray = new JSONArray();
+        JSONObject root = new JSONObject();
+        JSONArray shapeArray = new JSONArray();
         for (FlowchartShape shape : shapes) {
-            jsonArray.put(shape.toJsonObject());
+            shapeArray.put(shape.toJsonObject());
         }
-        return jsonArray.toString(4); // 格式化输出，方便阅读
+        root.put("shapes", shapeArray);
+        JSONArray lineArray = new JSONArray();
+        for (ConnectionLine line : connectionLines) {
+            lineArray.put(line.toJsonObject(shapes));
+        }
+        root.put("connections", lineArray);
+        return root.toString(4);
     }
 
     /**
@@ -479,10 +488,11 @@ public class CanvasPane extends Pane {
      * @param jsonString 包含图形数据的JSON字符串。
      */
     public void loadShapesFromJson(String jsonString) {
-        clearCanvas(); // 清空当前画布
-        JSONArray jsonArray = new JSONArray(jsonString);
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject json = jsonArray.getJSONObject(i);
+        clearCanvas();
+        JSONObject root = new JSONObject(jsonString);
+        JSONArray shapeArray = root.getJSONArray("shapes");
+        for (int i = 0; i < shapeArray.length(); i++) {
+            JSONObject json = shapeArray.getJSONObject(i);
             String type = json.getString("type");
             double x = json.getDouble("x");
             double y = json.getDouble("y");
@@ -490,7 +500,6 @@ public class CanvasPane extends Pane {
             double height = json.getDouble("height");
             String label = json.getString("label");
             Color color = Color.valueOf(json.getString("color"));
-
             FlowchartShape newShape = null;
             switch (type) {
                 case "rectangle":
@@ -506,17 +515,29 @@ public class CanvasPane extends Pane {
                     newShape = new ParallelogramShape(x, y, width, height, label);
                     break;
                 case "circle":
-                    // Circle的x,y是中心点，加载时需要调整
                     newShape = new CircleShape(x, y, width, height, label);
                     break;
                 case "hexagon":
                     newShape = new HexagonShape(x, y, width, height, label);
                     break;
             }
-
             if (newShape != null) {
                 newShape.setColor(color);
                 shapes.add(newShape);
+            }
+        }
+        // 加载连接线
+        if (root.has("connections")) {
+            JSONArray lineArray = root.getJSONArray("connections");
+            for (int i = 0; i < lineArray.length(); i++) {
+                JSONObject lineJson = lineArray.getJSONObject(i);
+                ConnectionLine line = ConnectionLine.fromJsonObject(lineJson, shapes);
+                connectionLines.add(line);
+                // 维护入线/出线
+                line.getStartPoint().getParentShape().addOutgoingLine(line);
+                if (line.getEndPoint() != null) {
+                    line.getEndPoint().getParentShape().addIncomingLine(line);
+                }
             }
         }
         redraw();

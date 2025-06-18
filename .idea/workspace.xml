@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4f575ea1-1ee5-4d3e-a886-40c3cb69edda" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/CircleShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/CircleShape.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/DiamondShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/DiamondShape.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/EllipseShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/EllipseShape.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/FlowchartShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/FlowchartShape.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/HexagonShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/HexagonShape.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/ParallelogramShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/ParallelogramShape.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/RectangleShape.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/RectangleShape.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/editor/model/ConnectionLine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/model/ConnectionLine.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/editor/ui/CanvasPane.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/ui/CanvasPane.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/editor/ui/PropertyPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/editor/ui/PropertyPanel.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
