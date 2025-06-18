@@ -3,6 +3,7 @@ package editor.model;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
+import org.json.JSONObject;
 
 public class DiamondShape extends FlowchartShape {
     private Polygon diamond;
@@ -51,5 +52,18 @@ public class DiamondShape extends FlowchartShape {
     @Override
     public DiamondShape clone() throws CloneNotSupportedException {
         return (DiamondShape) super.clone();
+    }
+
+    @Override
+    public JSONObject toJsonObject() {
+        JSONObject json = new JSONObject();
+        json.put("type", "diamond");
+        json.put("x", x);
+        json.put("y", y);
+        json.put("width", width);
+        json.put("height", height);
+        json.put("label", label);
+        json.put("color", color.toString());
+        return json;
     }
 }

@@ -18,18 +18,20 @@ import java.util.Map;
 public class ToolbarPanel extends ToolBar {
 
     private CanvasPane canvas;
+    private MainWindow mainWindow;
     private final Map<String, Button> toolButtons = new HashMap<>();
 
-    public ToolbarPanel(CanvasPane canvas) {
+    public ToolbarPanel(CanvasPane canvas, MainWindow mainWindow) {
         this.canvas = canvas;
+        this.mainWindow = mainWindow;
 
         // 文件操作按钮
         Button newBtn = createToolbarButton("new.png", "新建", null);
-        // newBtn.setOnAction(e -> {}); // Add handler if needed
+        newBtn.setOnAction(e -> mainWindow.newFile());
         Button openBtn = createToolbarButton("open.png", "打开", null);
-        // openBtn.setOnAction(e -> {}); // Add handler if needed
+        openBtn.setOnAction(e -> mainWindow.openFile());
         Button saveBtn = createToolbarButton("save.png", "保存", null);
-        // saveBtn.setOnAction(e -> {}); // Add handler if needed
+        saveBtn.setOnAction(e -> mainWindow.saveFile());
 
         // 编辑操作按钮
         Button copyBtn = createToolbarButton("copy.png", "复制 (Ctrl+C)", new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN));

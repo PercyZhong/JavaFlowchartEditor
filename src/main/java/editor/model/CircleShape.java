@@ -3,6 +3,7 @@ package editor.model;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
+import org.json.JSONObject;
 
 public class CircleShape extends FlowchartShape {
     private Circle circle;
@@ -36,5 +37,18 @@ public class CircleShape extends FlowchartShape {
     @Override
     public CircleShape clone() throws CloneNotSupportedException {
         return (CircleShape) super.clone();
+    }
+
+    @Override
+    public JSONObject toJsonObject() {
+        JSONObject json = new JSONObject();
+        json.put("type", "circle");
+        json.put("x", x);
+        json.put("y", y);
+        json.put("width", width);
+        json.put("height", height);
+        json.put("label", label);
+        json.put("color", color.toString());
+        return json;
     }
 } 

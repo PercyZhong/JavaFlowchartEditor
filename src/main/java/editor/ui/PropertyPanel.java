@@ -11,6 +11,7 @@ import javafx.scene.paint.Color;
 public class PropertyPanel extends VBox {
     private final TextField labelField = new TextField();
     private final ColorPicker colorPicker = new ColorPicker();
+    private boolean isUpdatingFromShape = false; // 添加标志，用于防止循环更新
 
     private FlowchartShape currentShape;
 
@@ -22,24 +23,13 @@ public class PropertyPanel extends VBox {
                 new Label("颜色："), colorPicker
         );
 
-        // labelField.setOnAction(e -> {
-        //     if (currentShape != null) {
-        //         currentShape.setLabel(labelField.getText());
-        //         if (onShapeChanged != null) onShapeChanged.run();
-        //     }
-        // });
-        // colorPicker.setOnAction(e -> {
-        //     if (currentShape != null) {
-        //         currentShape.setColor(colorPicker.getValue());
-        //         if (onShapeChanged != null) onShapeChanged.run();
-        //     }
-        // });
         labelField.setOnAction(e -> updateShape());
         labelField.textProperty().addListener((obs, oldVal, newVal) -> updateShape());
         colorPicker.setOnAction(e -> updateShape());
     }
+
     private void updateShape() {
-        if (currentShape != null) {
+        if (currentShape != null && !isUpdatingFromShape) { // 只有在不是从图形更新时才执行
             currentShape.setLabel(labelField.getText());
             currentShape.setColor(colorPicker.getValue());
             if (onShapeChanged != null) onShapeChanged.run();
@@ -50,12 +40,16 @@ public class PropertyPanel extends VBox {
     public void showShape(FlowchartShape shape) {
         this.currentShape = shape;
         if (shape != null) {
+            isUpdatingFromShape = true; // 开始更新，防止触发 updateShape
             labelField.setText(shape.getLabel());
             colorPicker.setValue(shape.getColor());
+            isUpdatingFromShape = false; // 结束更新
             setDisable(false);
         } else {
+            isUpdatingFromShape = true; // 开始更新，防止触发 updateShape
             labelField.setText("");
             colorPicker.setValue(Color.WHITE);
+            isUpdatingFromShape = false; // 结束更新
             setDisable(true);
         }
     }

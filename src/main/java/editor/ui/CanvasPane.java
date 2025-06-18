@@ -16,6 +16,8 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.ClipboardContent;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,6 +148,7 @@ public class CanvasPane extends Pane {
     }
 
     private void handleMousePressed(MouseEvent event) {
+        this.requestFocus(); // 确保画布获得焦点
         mousePressedX = event.getX();
         mousePressedY = event.getY();
         isDraggingShapes = false;
@@ -342,6 +345,80 @@ public class CanvasPane extends Pane {
         redraw();
     }
 
+    /**
+     * 清空画布上的所有图形和选中状态。
+     */
+    public void clearCanvas() {
+        shapes.clear();
+        selectedShapes.clear();
+        undoStack.clear();
+        redoStack.clear();
+        redraw();
+        if (propertyPanel != null) {
+            propertyPanel.showShape(null);
+        }
+    }
+
+    /**
+     * 将画布上的所有图形保存为JSON字符串。
+     * @return 包含所有图形数据的JSON字符串。
+     */
+    public String saveShapesToJson() {
+        JSONArray jsonArray = new JSONArray();
+        for (FlowchartShape shape : shapes) {
+            jsonArray.put(shape.toJsonObject());
+        }
+        return jsonArray.toString(4); // 格式化输出，方便阅读
+    }
+
+    /**
+     * 从JSON字符串加载图形到画布上。
+     * @param jsonString 包含图形数据的JSON字符串。
+     */
+    public void loadShapesFromJson(String jsonString) {
+        clearCanvas(); // 清空当前画布
+        JSONArray jsonArray = new JSONArray(jsonString);
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject json = jsonArray.getJSONObject(i);
+            String type = json.getString("type");
+            double x = json.getDouble("x");
+            double y = json.getDouble("y");
+            double width = json.getDouble("width");
+            double height = json.getDouble("height");
+            String label = json.getString("label");
+            Color color = Color.valueOf(json.getString("color"));
+
+            FlowchartShape newShape = null;
+            switch (type) {
+                case "rectangle":
+                    newShape = new RectangleShape(x, y, width, height, label);
+                    break;
+                case "ellipse":
+                    newShape = new EllipseShape(x, y, width, height, label);
+                    break;
+                case "diamond":
+                    newShape = new DiamondShape(x, y, width, height, label);
+                    break;
+                case "parallelogram":
+                    newShape = new ParallelogramShape(x, y, width, height, label);
+                    break;
+                case "circle":
+                    // Circle的x,y是中心点，加载时需要调整
+                    newShape = new CircleShape(x, y, width, height, label);
+                    break;
+                case "hexagon":
+                    newShape = new HexagonShape(x, y, width, height, label);
+                    break;
+            }
+
+            if (newShape != null) {
+                newShape.setColor(color);
+                shapes.add(newShape);
+            }
+        }
+        redraw();
+    }
+
     // 根据工具类型创建临时 JavaFX Shape
     private javafx.scene.shape.Shape createTempJavaFXShape(String toolType, double x, double y) {
         javafx.scene.shape.Shape tempShape = null;
@@ -473,19 +550,23 @@ public class CanvasPane extends Pane {
 
     // 复制
     public void copySelectedShapes() {
+        System.out.println("copySelectedShapes() called. selectedShapes size: " + selectedShapes.size());
         clipboard.clear();
         for (FlowchartShape shape : selectedShapes) {
             try {
-                // 假设 FlowchartShape 实现了 Cloneable 接口并重写了 clone 方法
                 clipboard.add((FlowchartShape) shape.clone());
+                System.out.println("Cloned shape: " + shape.getLabel());
             } catch (CloneNotSupportedException e) {
                 e.printStackTrace();
+                System.err.println("Error cloning shape: " + e.getMessage());
             }
         }
+        System.out.println("clipboard size after copy: " + clipboard.size());
     }
 
     // 粘贴
     public void pasteShapes() {
+        System.out.println("pasteShapes() called. clipboard size: " + clipboard.size());
         if (!clipboard.isEmpty()) {
             selectedShapes.forEach(s -> s.setSelected(false)); // 清除当前选中
             selectedShapes.clear();
@@ -507,9 +588,11 @@ public class CanvasPane extends Pane {
                 }
 
                 if (newShape != null) {
+                    newShape.setColor(shape.getColor());
                     executeCommand(new AddShapeCommand(shapes, newShape));
                     selectedShapes.add(newShape);
                     newShape.setSelected(true);
+                    System.out.println("Pasted new shape: " + newShape.getLabel() + " at (" + newShape.getX() + ", " + newShape.getY() + ")");
                 }
             }
             redraw();

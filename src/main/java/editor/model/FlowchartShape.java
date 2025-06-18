@@ -2,6 +2,7 @@ package editor.model;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Shape;
+import org.json.JSONObject;
 
 public abstract class FlowchartShape implements Cloneable {
     protected double x, y, width, height;
@@ -16,6 +17,9 @@ public abstract class FlowchartShape implements Cloneable {
     public abstract Shape getShape();
     public abstract boolean contains(double px, double py);
 
+    // 新增抽象方法，用于将图形数据转换为 JSON 对象
+    public abstract JSONObject toJsonObject();
+
     // getter/setter
     public double getX() { return x; }
     public double getY() { return y; }
@@ -29,7 +33,10 @@ public abstract class FlowchartShape implements Cloneable {
     public void setY(double y) { this.y = y; }
     public void setWidth(double width) { this.width = width; }
     public void setHeight(double height) { this.height = height; }
-    public void setColor(Color color) { this.color = color; }
+    public void setColor(Color color) {
+        System.out.println("FlowchartShape.setColor() called. Shape: " + this.label + ", Old Color: " + this.color + ", New Color: " + color);
+        this.color = color; 
+    }
     public void setLabel(String label) { this.label = label; }
     public void setSelected(boolean selected) { this.selected = selected; }
 

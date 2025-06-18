@@ -3,6 +3,7 @@ package editor.model;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
+import org.json.JSONObject;
 
 public class ParallelogramShape extends FlowchartShape {
     private Polygon parallelogram;
@@ -40,5 +41,18 @@ public class ParallelogramShape extends FlowchartShape {
     @Override
     public ParallelogramShape clone() throws CloneNotSupportedException {
         return (ParallelogramShape) super.clone();
+    }
+
+    @Override
+    public JSONObject toJsonObject() {
+        JSONObject json = new JSONObject();
+        json.put("type", "parallelogram");
+        json.put("x", x);
+        json.put("y", y);
+        json.put("width", width);
+        json.put("height", height);
+        json.put("label", label);
+        json.put("color", color.toString());
+        return json;
     }
 } 

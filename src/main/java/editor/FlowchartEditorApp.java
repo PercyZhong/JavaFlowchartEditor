@@ -8,7 +8,7 @@ import editor.ui.MainWindow;
 public class FlowchartEditorApp extends Application {
     @Override
     public void start(Stage primaryStage) {
-        MainWindow mainWindow = new MainWindow();
+        MainWindow mainWindow = new MainWindow(primaryStage);
         Scene scene = new Scene(mainWindow, 1200, 800);
         primaryStage.setTitle("流程图编辑器");
         primaryStage.setScene(scene);
